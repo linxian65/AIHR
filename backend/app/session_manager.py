@@ -21,6 +21,8 @@ class SessionManager:
         self.session_store = session_store
         self._clients: dict[str, ClaudeSDKClient] = {}
         self._locks: dict[str, asyncio.Lock] = {}
+        self._active_turns: set[str] = set()
+        self._turn_lock = asyncio.Lock()
 
     def _lock(self, sid: str) -> asyncio.Lock:
         return self._locks.setdefault(sid, asyncio.Lock())
@@ -47,3 +49,18 @@ class SessionManager:
     async def close_all(self) -> None:
         for sid in list(self._clients.keys()):
             await self.close(sid)
+
+    async def try_begin_turn(self, session_id: str) -> bool:
+        async with self._turn_lock:
+            if session_id in self._active_turns:
+                return False
+            self._active_turns.add(session_id)
+            return True
+
+    async def end_turn(self, session_id: str) -> None:
+        async with self._turn_lock:
+            self._active_turns.discard(session_id)
+
+    async def is_turn_active(self, session_id: str) -> bool:
+        async with self._turn_lock:
+            return session_id in self._active_turns

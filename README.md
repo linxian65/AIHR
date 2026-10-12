@@ -52,7 +52,7 @@ cd frontend
 ./start.sh                           # Windows: .\start.ps1
 ```
 
-打开 http://localhost:5173
+打开 http://localhost:5174
 
 ## 目录结构
 
@@ -133,8 +133,8 @@ cd backend
 python tests/test_m3.py
 python tests/test_agent.py
 python tests/test_pii.py
-python tests/test_approval_e2e.py     # 需 uvicorn :8000 + vite :5173
-python tests/test_files_e2e.py        # 需 uvicorn :8000 + vite :5173
+python tests/test_approval_e2e.py     # 需 uvicorn :8000 + vite :5174
+python tests/test_files_e2e.py        # 需 uvicorn :8000 + vite :5174
 python tests/demo_end_to_end.py       # 需 uvicorn :8000，单一演示脚本
 ```
 

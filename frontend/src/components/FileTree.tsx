@@ -54,7 +54,7 @@ export function FileTree({ sessionId, onSelectFile, refreshKey }: Props) {
         <span style={{ fontWeight: 500 }}>工作区</span>
         <Button size="small" icon={<ReloadOutlined />} loading={loading} onClick={load} />
       </div>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {tree.length === 0 && !loading ? (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无文件" />
         ) : (

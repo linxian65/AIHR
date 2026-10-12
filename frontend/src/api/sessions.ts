@@ -1,5 +1,14 @@
 import type { SessionMeta, ScenarioInfo } from '../stores/sessionStore'
 
+export interface HistoryTurn {
+  turn_index: number
+  user_content: string
+  events: Array<{ event: string; data: any }>
+  status: string
+  cost_usd: number | null
+  created_at: string
+}
+
 export async function listSessions(): Promise<SessionMeta[]> {
   const res = await fetch('/api/sessions')
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -48,4 +57,16 @@ export async function renameSession(id: string, title: string): Promise<SessionM
 export async function deleteSession(id: string): Promise<void> {
   const res = await fetch(`/api/sessions/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
+}
+
+export async function fetchHistory(
+  sessionId: string,
+  limit = 20,
+  before?: number,
+): Promise<{ turns: HistoryTurn[]; total: number; has_more: boolean }> {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (before) params.set('before', String(before))
+  const res = await fetch(`/api/sessions/${sessionId}/history?${params}`)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
 }

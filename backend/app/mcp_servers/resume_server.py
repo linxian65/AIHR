@@ -44,6 +44,28 @@ EXTRACTORS = {
 }
 
 
+def extract_resume_text(full_path: Path) -> tuple[str, str]:
+    """Extract text from a resume file.
+
+    Returns (text, error_message). On success error_message is empty.
+    """
+    if not full_path.exists():
+        return "", f"文件不存在: {full_path.name}"
+    if not full_path.is_file():
+        return "", f"不是文件: {full_path.name}"
+    ext = full_path.suffix.lower()
+    extractor = EXTRACTORS.get(ext)
+    if extractor is None:
+        return "", f"不支持的文件类型: {ext}"
+    try:
+        text = extractor(full_path)
+    except Exception as e:
+        return "", f"解析失败: {type(e).__name__}: {e}"
+    if not text.strip():
+        return "", "解析结果为空（可能是扫描版 PDF 或加密文档）"
+    return text[:MAX_TEXT_CHARS], ""
+
+
 def make_resume_server(session_id: str, workspace_root: Path):
     """Build an MCP server bound to session_id's uploads directory."""
     base = (workspace_root / session_id).resolve()
@@ -66,21 +88,10 @@ def make_resume_server(session_id: str, workspace_root: Path):
                 return _err("路径越界，不允许访问工作区之外的文件")
         except Exception as e:
             return _err(f"路径解析失败: {e}")
-        if not full.exists():
-            return _err(f"文件不存在: {rel}")
-        if not full.is_file():
-            return _err(f"不是文件: {rel}")
-        ext = full.suffix.lower()
-        extractor = EXTRACTORS.get(ext)
-        if extractor is None:
-            return _err(f"暂不支持的文件类型: {ext}。支持 .pdf / .docx / .txt")
-        try:
-            text = extractor(full)
-        except Exception as e:
-            return _err(f"解析失败: {type(e).__name__}: {e}")
-        if not text:
-            return _err("解析结果为空，可能是扫描版 PDF 或加密文档")
-        truncated = text[:MAX_TEXT_CHARS]
+        text, err = extract_resume_text(full)
+        if err:
+            return _err(err)
+        truncated = text
         payload = {
             "file_path": rel,
             "file_name": full.name,

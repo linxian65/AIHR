@@ -37,7 +37,14 @@ function ApprovalCard({ approval }: { approval: PendingApproval }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (!data.ok) {
-        message.warning('该审批已被处理或超时')
+        const item = useSessionStore.getState().pendingApprovals.find(
+          (x) => x.approval_id === approval.approval_id
+        )
+        if (item?.fromDb) {
+          message.warning('该审批已失效（可能服务重启过），请重新触发工具调用')
+        } else {
+          message.warning('该审批已被处理或超时')
+        }
       }
       removePendingApproval(approval.approval_id)
     } catch (e: any) {

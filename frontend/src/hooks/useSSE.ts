@@ -6,7 +6,8 @@ export function useSSE(sessionId: string) {
   const {
     addMessage, appendAssistantDelta, appendThinkingDelta,
     updateToolUse, setStatus, setSseConnected, addPendingApproval,
-    incDoneCounter,
+    incDoneCounter, addSessionCost,
+    upsertBatchMessage, appendBatchError,
   } = useSessionStore()
 
   useEffect(() => {
@@ -49,6 +50,9 @@ export function useSSE(sessionId: string) {
           break
         case 'result':
           console.log('[result] cost=', payload.cost_usd)
+          if (typeof payload.cost_usd === 'number') {
+            addSessionCost(sessionId, payload.cost_usd)
+          }
           break
         case 'approval_required':
           addPendingApproval({
@@ -56,6 +60,28 @@ export function useSSE(sessionId: string) {
             tool_name: payload.tool_name,
             input: payload.input ?? {},
             createdAt: Date.now(),
+          })
+          break
+        case 'batch_progress':
+          upsertBatchMessage({
+            total: payload.total ?? 0,
+            completed: payload.completed ?? 0,
+            current: payload.current ?? null,
+            status: 'running',
+          })
+          break
+        case 'batch_error':
+          appendBatchError({
+            file: payload.file ?? '?',
+            message: payload.message ?? '',
+          })
+          break
+        case 'batch_complete':
+          upsertBatchMessage({
+            status: 'done',
+            okCount: payload.ok,
+            failedCount: payload.failed,
+            summaryPath: payload.summary_path,
           })
           break
         case 'error':
@@ -71,7 +97,7 @@ export function useSSE(sessionId: string) {
       }
     }
 
-    const types = ['message_delta','thinking_delta','tool_use_start','tool_use_result','approval_required','result','error','done','ping']
+    const types = ['message_delta','thinking_delta','tool_use_start','tool_use_result','approval_required','result','error','done','ping','batch_progress','batch_error','batch_complete']
     types.forEach((t) => es.addEventListener(t, (e) => handle(e as MessageEvent, t)))
 
     return () => {

@@ -23,6 +23,7 @@ from app.hooks.pii import (
     scrub_tool_input,
     write_audit,
 )
+from app.repositories import approvals_repo
 
 DANGEROUS_PATTERNS = [
     re.compile(r"mcp__.*__send_.*"),
@@ -79,6 +80,7 @@ def make_can_use_tool(session_id: str, event_bus: EventBus):
         # Stage 2: approval
         if is_dangerous(tool_name):
             approval_id = f"apr_{uuid.uuid4().hex[:10]}"
+            await approvals_repo.create(approval_id, session_id, tool_name, scrubbed_input)
             future = register_approval(session_id, approval_id)
             await event_bus.publish(
                 session_id,

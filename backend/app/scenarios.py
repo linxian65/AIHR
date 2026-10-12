@@ -24,12 +24,14 @@ SCENARIOS: dict[str, dict] = {
 - 薪酬预算范围
 2. 澄清后输出结构化的岗位画像卡（Markdown），包含：
 使命、核心产出、必须项、加分项、排除项、面试重点、薪酬建议、招聘风险
-3. 岗位画像确认后，生成正式 JD，并调用 check_jd_compliance（如可用）做合规检查
-4. 输出写入 workspace/jd/{role_name}.md
+3. 岗位画像确认后，生成正式 JD，**必须**调用 `mcp__compliance_server__check_jd_compliance` 工具做合规检查
+4. 如果工具有 high 风险项命中，必须在回复中明确列出问题、引用法律条款、给出修改后的版本
+5. 输出写入 workspace/jd/{role_name}.md
 
 约束：
 - 不要一次问 5 个问题。分批问，每批不超过 3 个。
 - JD 中禁止出现年龄、性别、婚育状况等歧视性描述
+- 合规判断必须基于工具返回结果，不要凭直觉判断
 """,
     },
     "screen": {

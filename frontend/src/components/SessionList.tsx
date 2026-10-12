@@ -149,15 +149,15 @@ export function SessionList() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Space style={{ marginBottom: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      <Space style={{ marginBottom: 12, flex: '0 0 auto' }}>
         <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => setNewOpen(true)}>
           新建
         </Button>
         <Button size="small" icon={<ReloadOutlined />} loading={loading} onClick={refresh} />
       </Space>
 
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {sessions.length === 0 ? (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无会话" />
         ) : (

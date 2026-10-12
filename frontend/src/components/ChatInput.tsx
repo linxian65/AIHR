@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Input, Button, message } from 'antd'
 import { useSessionStore } from '../stores/sessionStore'
 import { UploadZone } from './UploadZone'
+import { BatchScreenModal } from './BatchScreenModal'
 import * as api from '../api/sessions'
 
 const SCENARIO_COMMANDS: Record<string, string> = {
@@ -11,8 +12,35 @@ const SCENARIO_COMMANDS: Record<string, string> = {
   '/policy': 'policy',
 }
 
+async function postMessage(
+  sessionId: string,
+  content: string,
+  onUserAdded: () => void,
+) {
+  useSessionStore.getState().setStatus('thinking')
+  const res = await fetch(`/api/sessions/${sessionId}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  })
+  if (res.status === 409) {
+    message.warning('上一条消息还在处理中，请稍候')
+    useSessionStore.getState().removeLastUserMessage(sessionId)
+    useSessionStore.getState().setStatus('idle')
+    return
+  }
+  if (res.status === 402) {
+    const err = await res.json().catch(() => ({}))
+    message.error(err.detail || '该会话已达成本上限')
+    useSessionStore.getState().removeLastUserMessage(sessionId)
+    useSessionStore.getState().setStatus('idle')
+    return
+  }
+}
+
 export function ChatInput({ sessionId }: { sessionId: string }) {
   const [value, setValue] = useState('')
+  const [batchOpen, setBatchOpen] = useState(false)
   const { addMessage, setStatus } = useSessionStore()
 
   const send = async () => {
@@ -50,23 +78,13 @@ export function ChatInput({ sessionId }: { sessionId: string }) {
       setValue('')
     }
 
-    setStatus('thinking')
-    await fetch(`/api/sessions/${sessionId}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: actualContent }),
-    })
+    await postMessage(sessionId, actualContent, () => {})
   }
 
   const handleUploaded = async (path: string) => {
     const text = `请解析刚上传的简历：${path}`
     addMessage({ kind: 'user', id: 'u_' + Date.now(), text })
-    setStatus('thinking')
-    await fetch(`/api/sessions/${sessionId}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: text }),
-    })
+    await postMessage(sessionId, text, () => {})
   }
 
   return (
@@ -89,8 +107,14 @@ export function ChatInput({ sessionId }: { sessionId: string }) {
           autoSize={{ minRows: 1, maxRows: 5 }}
           placeholder="输入消息，Enter 发送，Shift+Enter 换行。试试 /jd /screen /interview /policy"
         />
+        <Button onClick={() => setBatchOpen(true)}>批量评估</Button>
         <Button type="primary" onClick={send}>发送</Button>
       </div>
+      <BatchScreenModal
+        open={batchOpen}
+        sessionId={sessionId}
+        onClose={() => setBatchOpen(false)}
+      />
     </div>
   )
 }

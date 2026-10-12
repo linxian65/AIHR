@@ -6,6 +6,7 @@ from claude_agent_sdk import ClaudeAgentOptions
 from app.config import MINIMAX_BASE_URL, MINIMAX_API_KEY, MINIMAX_MODEL, WORKSPACE_DIR
 from app.event_bus import EventBus
 from app.hooks.approval import make_can_use_tool
+from app.mcp_servers.compliance_server import make_compliance_server
 from app.mcp_servers.resume_server import make_resume_server
 from app.scenarios import DEFAULT_SCENARIO, get_prompt as get_scenario_prompt
 
@@ -63,6 +64,7 @@ def build_options(
     session_dir = session_root / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
     resume_server = make_resume_server(session_id, session_root)
+    compliance_server = make_compliance_server()
     return ClaudeAgentOptions(
         env={
             "ANTHROPIC_BASE_URL": MINIMAX_BASE_URL,
@@ -73,6 +75,7 @@ def build_options(
         system_prompt=system_prompt,
         allowed_tools=[
             "mcp__resume_server__parse_resume",
+            "mcp__compliance_server__check_jd_compliance",
             "Read",
             "Glob",
         ],
@@ -83,7 +86,10 @@ def build_options(
             "AskUserQuestion",
         ],
         permission_mode="default",
-        mcp_servers={"resume_server": resume_server},
+        mcp_servers={
+            "resume_server": resume_server,
+            "compliance_server": compliance_server,
+        },
         include_partial_messages=True,
         cwd=str(session_dir),
         max_turns=10,

@@ -23,6 +23,10 @@ MINIMAX_MODEL: str = os.environ.get("ANTHROPIC_MODEL", "MiniMax-M3")
 WORKSPACE_DIR: Path = Path(__file__).resolve().parent.parent / "workspace"
 WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Per-session cumulative cost guardrails (spec 17B).
+SESSION_COST_LIMIT_USD: float = float(os.getenv("SESSION_COST_LIMIT_USD", "5.0"))
+TURN_COST_WARN_USD: float = float(os.getenv("TURN_COST_WARN_USD", "0.5"))
+
 
 if __name__ == "__main__":
     print("MINIMAX_BASE_URL :", MINIMAX_BASE_URL)

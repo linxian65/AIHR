@@ -13,12 +13,14 @@ backend/.env
 # Backend runtime
 backend/workspace
 backend/data
-backend/*.log
+backend/**/*.log
+*.log
 
 # Frontend
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/**/*.log
 
 # OS
 .DS_Store
